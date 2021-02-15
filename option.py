@@ -2,14 +2,14 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Age Estimator')
 """dataset options"""
-parser.add_argument('--train_img', type=str,
-                    default='path to images for training')
-parser.add_argument('--train_label', type=str,
-                    default='path to .csv file which contains labels of images for training')
-parser.add_argument('--val_img', type=str,
-                    default='path to images for test')
-parser.add_argument('--val_label', type=str,
-                    default='path to .csv file which contains labels of images for test')
+parser.add_argument('--train_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/aligned',
+                    help='path to images for training')
+parser.add_argument('--train_label', type=str, default='Morph_Train1.txt',
+                    help='path to .csv file which contains labels of images for training')
+parser.add_argument('--val_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/aligned',
+                    help='path to images for test')
+parser.add_argument('--val_label', type=str, default='Morph_Valid1.txt',
+                    help='path to .csv file which contains labels of images for test')
 """optimizer options"""
 parser.add_argument("--lr", type=float, default=1e-3, help='learning rate')
 parser.add_argument('--optimizer', default='SGD', choices=('SGD', 'ADAM', 'NADAM', 'RMSprop'), help='optimizer to use (SGD | ADAM | NADAM | RMSprop)')
@@ -20,6 +20,7 @@ parser.add_argument('--beta1', type=float, default=0.9, help='ADAM beta1')
 parser.add_argument('--beta2', type=float, default=0.999, help='ADAM beta2')
 parser.add_argument('--amsgrad', action='store_true', help='ADAM amsgrad')
 parser.add_argument('--epsilon', type=float, default=1e-8, help='ADAM epsilon for numerical stability')
+parser.add_argument('--weight-decay', type=float, default=5e-4, help='Weight Decay')
 parser.add_argument('--gamma', type=float, default=0.8, help='learning rate decay factor for step decay')
 parser.add_argument('--reset', action='store_true', help='reset the training')
 parser.add_argument("--epochs", type=int, default=60, help='number of epochs to train')

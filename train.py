@@ -3,23 +3,26 @@ import torch
 import data
 import loss
 import utils
-import time
+import numpy as np
 from option import args
 from model import ThinAge, TinyAge
 from test import test
+from tqdm import tqdm
 
-models = {'ThinAge':ThinAge, 'TinyAge':TinyAge}
+models = {'ThinAge': ThinAge, 'TinyAge': TinyAge}
+
 
 def get_model(pretrained=False):
     model = args.model_name
-	assert model in models
-	if pretrained:
-		path = os.path.join('./pretrained/{}.pt'.format(model))
-		assert os.path.exists(path)
-		return torch.load(path)
+    assert model in models
+    if pretrained:
+        path = os.path.join('./pretrained/{}.pt'.format(model))
+        assert os.path.exists(path)
+        return torch.load(path)
     model = models[model]()
 
     return model
+
 
 def main():
     model = get_model()
@@ -27,13 +30,14 @@ def main():
     model = model.to(device)
     loader = data.Data(args).train_loader
     rank = torch.Tensor([i for i in range(101)]).cuda()
+    best_mae = np.inf
     for i in range(args.epochs):
         lr = 0.001 if i < 30 else 0.0001
         optimizer = utils.make_optimizer(args, model, lr)
         model.train()
         print('Learning rate:{}'.format(lr))
-        start_time = time.time()
-        for j, inputs in enumerate(loader):
+        # start_time = time.time()
+        for j, inputs in enumerate(tqdm(loader)):
             img, label, age = inputs
             img = img.to(device)
             label = label.to(device)
@@ -46,14 +50,24 @@ def main():
             total_loss = loss1 + loss2
             total_loss.backward()
             optimizer.step()
-            current_time = time.time()
-            print('[Epoch:{}] \t[batch:{}]\t[loss={:.4f}]'.format(i, j, total_loss.item()))
-            start_time = time.time()
-        torch.save(model, './pretrained/{}.pt'.format(args.model_name))
-        torch.save(model.state_dict(), './pretrained/{}_dict.pt'.format(args.model_name))
-        print('Test: Epoch=[{}]'.format(i))
+            # current_time = time.time()
+            if j % 10 == 0:
+                tqdm.write('[Epoch:{}] \t[batch:{}]\t[loss={:.4f}]'.format(
+                    i, j, total_loss.item()))
+            # start_time = time.time()
+            torch.save(model, './pretrained/{}.pt'.format(args.model_name))
+            torch.save(model.state_dict(),
+                       './pretrained/{}_dict.pt'.format(args.model_name))
         if (i+1) % 2 == 0:
-            test()
+            print('Test: Epoch=[{}]'.format(i))
+            cur_mae = test()
+            if cur_mae < best_mae:
+                best_mae = cur_mae
+                print(f'Saving best model with MAE {cur_mae}... ')
+                torch.save(
+                    model, './pretrained/best_{}_MAE={}.pt'.format(args.model_name, cur_mae))
+                torch.save(model.state_dict(),
+                           './pretrained/best_{}_dict_MAE={}.pt'.format(args.model_name, cur_mae))
 
 
 if __name__ == '__main__':
