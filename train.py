@@ -5,11 +5,12 @@ import loss
 import utils
 import numpy as np
 from option import args
-from model import ThinAge, TinyAge
+from model import ThinAge, TinyAge, get_resnet18
 from test import test
 from tqdm import tqdm
+from torch.nn.utils.clip_grad import clip_grad_value_
 
-models = {'ThinAge': ThinAge, 'TinyAge': TinyAge}
+models = {'ThinAge': ThinAge, 'TinyAge': TinyAge, 'resnet18':get_resnet18}
 
 
 def get_model(pretrained=False):
@@ -28,6 +29,7 @@ def main():
     model = get_model()
     device = torch.device('cuda')
     model = model.to(device)
+    print(model)
     loader = data.Data(args).train_loader
     rank = torch.Tensor([i for i in range(101)]).cuda()
     best_mae = np.inf
@@ -55,19 +57,19 @@ def main():
                 tqdm.write('[Epoch:{}] \t[batch:{}]\t[loss={:.4f}]'.format(
                     i, j, total_loss.item()))
             # start_time = time.time()
-            torch.save(model, './pretrained/{}.pt'.format(args.model_name))
-            torch.save(model.state_dict(),
-                       './pretrained/{}_dict.pt'.format(args.model_name))
+        torch.save(model, './checkpoint/{}.pt'.format(args.model_name))
+        torch.save(model.state_dict(),
+                   './checkpoint/{}_dict.pt'.format(args.model_name))
         if (i+1) % 2 == 0:
             print('Test: Epoch=[{}]'.format(i))
-            cur_mae = test()
+            cur_mae = test(model)
             if cur_mae < best_mae:
                 best_mae = cur_mae
                 print(f'Saving best model with MAE {cur_mae}... ')
                 torch.save(
-                    model, './pretrained/best_{}_MAE={}.pt'.format(args.model_name, cur_mae))
+                    model, './checkpoint/best_{}_MAE={}.pt'.format(args.model_name, cur_mae))
                 torch.save(model.state_dict(),
-                           './pretrained/best_{}_dict_MAE={}.pt'.format(args.model_name, cur_mae))
+                           './checkpoint/best_{}_dict_MAE={}.pt'.format(args.model_name, cur_mae))
 
 
 if __name__ == '__main__':

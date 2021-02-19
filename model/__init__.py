@@ -2,11 +2,26 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.models import resnet18
+
+
+def get_resnet18():
+    model = resnet18(True)
+    model.fc = nn.Sequential(
+        nn.Linear(512, 101),
+        nn.Softmax(1)
+    )
+    for m in model.fc.modules():
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_normal_(m.weight)
+            # nn.init.constant_(m.bias, 0)
+    return model
 
 
 def Conv(in_channels, out_channels, kerner_size, stride, padding):
     return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kerner_size, stride, padding, bias=False),
+        nn.Conv2d(in_channels, out_channels, kerner_size,
+                  stride, padding, bias=False),
         nn.BatchNorm2d(out_channels),
         nn.ReLU(True),
     )

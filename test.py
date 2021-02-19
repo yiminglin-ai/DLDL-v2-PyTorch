@@ -12,8 +12,8 @@ group = {0: "0-19", 1: "20-29", 2: "30-39",
          3: "40-49", 4: "50-59", 5: "60-69", 6: "70-"}
 
 
-def get_group(age):
-    if 0 <= age <= 19:
+def get_group(age: int):
+    if age <= 19:
         return 0
     elif 20 <= age <= 29:
         return 1
@@ -28,6 +28,7 @@ def get_group(age):
     elif 70 <= age:
         return 6
     else:
+        print(age)
         raise ValueError
 
 
@@ -48,13 +49,14 @@ def preprocess(img):
     return imgs
 
 
-def test():
+def test(model=None):
     num_group = len(group)
     group_count = torch.zeros(num_group)
-
-    model = torch.load('./pretrained/{}.pt'.format(args.model_name))
     device = torch.device('cuda')
-    model = model.to(device)
+    if model is None:
+        model = torch.load('./checkpoint/{}.pt'.format(args.model_name))
+        model = model.to(device)
+        
     model.eval()
     rank = torch.Tensor([i for i in range(101)]).cuda()
     error = 0
@@ -68,7 +70,6 @@ def test():
                                         shuffle=False,
                                         batch_size=args.train_batch_size,
                                         num_workers=args.nThread)
-
     with torch.no_grad():
         for i, inputs in enumerate(tqdm(test_loader)):
             img, flip, label, age = inputs
@@ -89,12 +90,15 @@ def test():
             #     tqdm.write('label:{} \tage:{:.2f}'.format(age, predict_age))
             error += (predict_age-age).abs().sum().item()
             count += len(img)
-            for ind, a in enumerate(predict_age):
+            for ind, a in enumerate(predict_age.cpu().numpy()):
+                # import ipdb; ipdb.set_trace()
                 if abs(age[ind].item() - a) < 1:
                     correct_count[get_group(age[ind].item())] += 1
                     correct_group[get_group(age[ind].item())] += 1
-                elif get_group(age[ind].item()) == get_group(a):
-                    correct_group[get_group(age[ind].item())] += 1
+                else:
+                    a = int(np.round(a))
+                    if get_group(age[ind].item()) == get_group(a):
+                        correct_group[get_group(age[ind].item())] += 1
 
     for ind, p in enumerate(group_count):
         if p == 0:
