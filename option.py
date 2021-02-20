@@ -10,6 +10,9 @@ parser.add_argument('--val_img', type=str, default='/home/yiminglin/ibug/age_dat
                     help='path to images for test')
 parser.add_argument('--val_label', type=str, default='Morph_Valid1.txt',
                     help='path to .csv file which contains labels of images for test')
+parser.add_argument('--detect_dir', type=str, default='/home/yiminglin/ibug/age_data/morph2/detected',
+                    help='path to .csv file which contains labels of images for training')
+
 """optimizer options"""
 parser.add_argument("--lr", type=float, default=1e-3, help='learning rate')
 parser.add_argument('--optimizer', default='SGD', choices=('SGD', 'ADAM', 'NADAM', 'RMSprop'), help='optimizer to use (SGD | ADAM | NADAM | RMSprop)')

@@ -40,7 +40,7 @@ def main():
         print('Learning rate:{}'.format(lr))
         # start_time = time.time()
         for j, inputs in enumerate(tqdm(loader)):
-            img, label, age = inputs
+            img, label, age = inputs['image'], inputs['label'], inputs['age']
             img = img.to(device)
             label = label.to(device)
             age = age.to(device)

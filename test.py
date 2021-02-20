@@ -8,6 +8,10 @@ from torchvision import transforms
 from tqdm import tqdm
 import data
 from torch.utils.data import dataloader
+import albumentations as A
+from albumentations.pytorch.transforms import ToTensorV2
+import torch.nn.functional as F
+
 group = {0: "0-19", 1: "20-29", 2: "30-39",
          3: "40-49", 4: "50-59", 5: "60-69", 6: "70-"}
 
@@ -34,11 +38,15 @@ def get_group(age: int):
 
 BATCH_SIZE = 64
 transform_list = [
-    transforms.Resize((args.height, args.width), interpolation=3),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    A.Resize(height=args.height, width=args.width),
+    A.Normalize(),
+    # data.RoITanhPolarWarp([args.height, args.width]),
+    ToTensorV2()
 ]
-transform = transforms.Compose(transform_list)
+# transform = transforms.Compose(transform_list)
+transform = A.Compose(transform_list, bbox_params=A.BboxParams(
+    format='pascal_voc', label_fields=['category_ids']))
+
 
 
 def preprocess(img):
@@ -65,14 +73,15 @@ def test(model=None):
     correct_group = torch.zeros(num_group)
 
     test_dataset = data.Dataset(
-        args.val_img, args.val_label, transform, flip=True)
+        args.val_img, args.val_label, args.detect_dir, transform, flip=True)
     test_loader = dataloader.DataLoader(test_dataset,
                                         shuffle=False,
                                         batch_size=args.train_batch_size,
                                         num_workers=args.nThread)
     with torch.no_grad():
-        for i, inputs in enumerate(tqdm(test_loader)):
-            img, flip, label, age = inputs
+        for i, (inputs, flip_inputs) in enumerate(tqdm(test_loader)):
+            img, label, age = inputs['image'], inputs['label'], inputs['age']
+            flip = flip_inputs['image']
             for p in age:
                 group_count[get_group(p.item())] += 1
             img = img.to(device)
