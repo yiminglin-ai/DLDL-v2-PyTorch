@@ -45,8 +45,8 @@ class RoITanhPolarWarp(A.DualTransform):
                  keep_aspect_ratio=True,
                  always_apply=False, p=1,
                  aug_p=0,
-                 shift_limit=0.2,
-                 scale_limit=0.2,
+                 shift_limit=0.1,
+                 scale_limit=0.1,
                  rotate_limit=30,
                  shift_limit_x=None,
                  shift_limit_y=None
@@ -88,8 +88,6 @@ class RoITanhPolarWarp(A.DualTransform):
         else:
             angle = 0
         angle = angle / 180. * np.pi
-
-        angle = 0
         image = ref.roi_tanh_polar_warp(image, bbox_, self.target_size,
                                         angle,
                                         cv2.INTER_NEAREST,
@@ -136,38 +134,6 @@ class RoITanhPolarWarp(A.DualTransform):
             "aug_p": self.aug_p,
         }
 
-
-class RoITanhWarp(RoITanhPolarWarp):
-
-    def apply(self, image, bbox, angle=0, scale=0, dx=0, dy=0, **params):
-        if np.random.uniform() < self.aug_p:
-            bbox = bbox_shift_scale(bbox, scale, dx, dy, **params)
-        else:
-            angle = 0
-        angle = angle / 180. * np.pi
-        image = ref.roi_tanh_warp(image, bbox, self.target_size,
-                                  angle,
-                                  self.interpolation,
-                                  self.border_mode,
-                                  self.border_value)
-        return image
-
-
-class RoITanhCircularWarp(RoITanhPolarWarp):
-
-    def apply(self, image, bbox, angle=0, scale=0, dx=0, dy=0, **params):
-        if np.random.uniform() < self.aug_p:
-            bbox = bbox_shift_scale(bbox, scale, dx, dy, **params)
-        else:
-            angle = 0
-        angle = angle / 180. * np.pi
-        image = ref.roi_tanh_circular_warp(image, bbox, self.target_size,
-                                           angle,
-                                           self.interpolation,
-                                           self.border_mode,
-                                           self.border_value,
-                                           keep_aspect_ratio=self.keep_aspect_ratio)
-        return image
 
 
 def bbox_hflip(bbox, cols):  # skipcq: PYL-W0613
@@ -250,6 +216,8 @@ class Dataset(dataset.Dataset):
         # import ipdb; ipdb.set_trace()
         bbox = np.loadtxt(os.path.join(
             self.detect_dir, name[:-3]+'bbox.txt'), int)
+        mask = cv2.imread(os.path.join(
+            self.detect_dir, name[:-3]+'png'), cv2.IMREAD_GRAYSCALE)
         x1, y1, x2, y2 = bbox[:4]
         x1 = np.clip(x1, 0, w)
         x2 = np.clip(x2, 0, w)
@@ -273,7 +241,7 @@ class Dataset(dataset.Dataset):
             'label': label,
             "bboxes": [bbox],
             "category_ids":[age],
-            # "mask": mask,
+            "mask": mask,
         }
 
         if not self.flip:
@@ -283,7 +251,11 @@ class Dataset(dataset.Dataset):
         else:
             # sample_flip = sample.copy()
             # for roi tanh polar 
-            sample_flip = A.HorizontalFlip(p=1)(**sample)
+            bboxes_ = A.convert_bboxes_to_albumentations(sample['bboxes'], 'pascal_voc', h, w)
+            sample_flip = sample.copy()
+            sample_flip['bboxes'] = bboxes_
+            sample_flip = A.HorizontalFlip(p=1)(**sample_flip)
+            sample_flip['bboxes'] = A.convert_bboxes_from_albumentations(sample_flip['bboxes'], 'pascal_voc', h, w)
             # sample_flip['image'] = self.transform(sample['image'])
             # for fake bbox
             # sample_flip['image'] = A.functional.hflip(sample['image'])
