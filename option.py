@@ -2,11 +2,11 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Age Estimator')
 """dataset options"""
-parser.add_argument('--train_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/aligned',
+parser.add_argument('--train_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/Album2',
                     help='path to images for training')
 parser.add_argument('--train_label', type=str, default='Morph_Train1.txt',
                     help='path to .csv file which contains labels of images for training')
-parser.add_argument('--val_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/aligned',
+parser.add_argument('--val_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/Album2',
                     help='path to images for test')
 parser.add_argument('--val_label', type=str, default='Morph_Valid1.txt',
                     help='path to .csv file which contains labels of images for test')

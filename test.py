@@ -38,9 +38,9 @@ def get_group(age: int):
 
 BATCH_SIZE = 64
 transform_list = [
-    A.Resize(height=args.height, width=args.width),
+    # A.Resize(height=args.height, width=args.width),
+    data.RoITanhPolarWarp([args.height, args.width]),
     A.Normalize(),
-    # data.RoITanhPolarWarp([args.height, args.width]),
     ToTensorV2()
 ]
 # transform = transforms.Compose(transform_list)

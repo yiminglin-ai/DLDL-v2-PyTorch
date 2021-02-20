@@ -73,7 +73,6 @@ class RoITanhPolarWarp(A.DualTransform):
         else:
             angle = 0
         angle = angle / 180. * np.pi
-        angle = 0
         image = ref.roi_tanh_polar_warp(image, bbox_, self.target_size,
                                         angle,
                                         self.interpolation,
@@ -83,12 +82,13 @@ class RoITanhPolarWarp(A.DualTransform):
         return image
 
     # def apply_to_mask(self, img, bbox, **params):
-    def apply_to_mask(self, image, bbox_, angle=0, scale=0, dx=0, dy=0, aug_p=0, **params):
+    def apply_to_mask(self, image, bbox_, angle=0, scale=0, dx=0, dy=0, aug_p=0, cols=0, rows=0,**params):
         if self.aug_p > aug_p:
             bbox_ = bbox_shift_scale(bbox_, scale, dx, dy, **params)
         else:
             angle = 0
         angle = angle / 180. * np.pi
+
         angle = 0
         image = ref.roi_tanh_polar_warp(image, bbox_, self.target_size,
                                         angle,
@@ -100,6 +100,8 @@ class RoITanhPolarWarp(A.DualTransform):
 
     def get_params_dependent_on_targets(self, params):
         bbox_ = params["bboxes"][0]
+        h,w = params['image'].shape[:2]
+        bbox_ = A.convert_bbox_from_albumentations(bbox_, 'pascal_voc', h, w)
         return {"bbox_": bbox_}
     
     def apply_to_bbox(self, bbox, **params):
@@ -107,7 +109,7 @@ class RoITanhPolarWarp(A.DualTransform):
 
     @property
     def targets_as_params(self):
-        return ["bboxes"]
+        return ["bboxes", 'image']
 
     def get_params(self):
         return {
@@ -201,9 +203,10 @@ class Data:
                  A.ToGray(),
                  A.Rotate(20)]
             ),
-            A.Resize(height=args.height, width=args.width),
+            # A.Resize(height=args.height, width=args.width),
+            RoITanhPolarWarp([args.height, args.width]),
             A.Normalize(),
-            # RoITanhPolarWarp([args.height, args.width]),
+            # 
             ToTensorV2()
 
             # transforms.RandomChoice(
@@ -245,15 +248,15 @@ class Dataset(dataset.Dataset):
         w, h = img.width, img.height
 
         # import ipdb; ipdb.set_trace()
-        # bbox = np.loadtxt(os.path.join(
-        #     self.detect_dir, name[:-3]+'bbox.txt'), int)
-        # x1, y1, x2, y2 = bbox[:4]
-        # x1 = np.clip(x1, 0, w)
-        # x2 = np.clip(x2, 0, w)
-        # y1 = np.clip(y1, 0, h)
-        # y2 = np.clip(y2, 0, h)
-        # bbox = list(map(int, [x1, y1, x2, y2]))
-        bbox = [0,0, w-2, h-2]
+        bbox = np.loadtxt(os.path.join(
+            self.detect_dir, name[:-3]+'bbox.txt'), int)
+        x1, y1, x2, y2 = bbox[:4]
+        x1 = np.clip(x1, 0, w)
+        x2 = np.clip(x2, 0, w)
+        y1 = np.clip(y1, 0, h)
+        y2 = np.clip(y2, 0, h)
+        bbox = list(map(int, [x1, y1, x2, y2]))
+        # bbox = [0,0, w-2, h-2]
         
         label = [normal_sampling(int(age), i) for i in range(101)]
         label = [i if i > 1e-15 else 1e-15 for i in label]
@@ -278,8 +281,12 @@ class Dataset(dataset.Dataset):
                 sample = self.transform(**sample)
             return sample
         else:
-            sample_flip = sample.copy()
+            # sample_flip = sample.copy()
+            # for roi tanh polar 
             sample_flip = A.HorizontalFlip(p=1)(**sample)
+            # sample_flip['image'] = self.transform(sample['image'])
+            # for fake bbox
+            # sample_flip['image'] = A.functional.hflip(sample['image'])
             if self.transform is not None:
                 sample = self.transform(**sample)
                 sample_flip = self.transform(**sample_flip)
