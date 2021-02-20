@@ -245,14 +245,16 @@ class Dataset(dataset.Dataset):
         w, h = img.width, img.height
 
         # import ipdb; ipdb.set_trace()
-        bbox = np.loadtxt(os.path.join(
-            self.detect_dir, name[:-3]+'bbox.txt'), int)
-        x1, y1, x2, y2 = bbox[:4]
-        x1 = np.clip(x1, 0, w)
-        x2 = np.clip(x2, 0, w)
-        y1 = np.clip(y1, 0, h)
-        y2 = np.clip(y2, 0, h)
-        bbox = list(map(int, [x1, y1, x2, y2]))
+        # bbox = np.loadtxt(os.path.join(
+        #     self.detect_dir, name[:-3]+'bbox.txt'), int)
+        # x1, y1, x2, y2 = bbox[:4]
+        # x1 = np.clip(x1, 0, w)
+        # x2 = np.clip(x2, 0, w)
+        # y1 = np.clip(y1, 0, h)
+        # y2 = np.clip(y2, 0, h)
+        # bbox = list(map(int, [x1, y1, x2, y2]))
+        bbox = [0,0, w-2, h-2]
+        
         label = [normal_sampling(int(age), i) for i in range(101)]
         label = [i if i > 1e-15 else 1e-15 for i in label]
         label = torch.Tensor(label)
@@ -266,7 +268,7 @@ class Dataset(dataset.Dataset):
             'h': h,
             'name': name,
             'label': label,
-            "bboxes": [[0,0,w,h]],
+            "bboxes": [bbox],
             "category_ids":[age],
             # "mask": mask,
         }
