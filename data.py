@@ -170,7 +170,7 @@ class Data:
                  A.Rotate(20)]
             ),
             # A.Resize(height=args.height, width=args.width),
-            RoITanhPolarWarp([args.height, args.width]),
+            RoITanhPolarWarp([args.height, args.width], aug_p=0.5),
             A.Normalize(),
             # 
             ToTensorV2()
@@ -217,7 +217,7 @@ class Dataset(dataset.Dataset):
         bbox = np.loadtxt(os.path.join(
             self.detect_dir, name[:-3]+'bbox.txt'), int)
         mask = cv2.imread(os.path.join(
-            self.detect_dir, name[:-3]+'png'), cv2.IMREAD_GRAYSCALE)
+            self.mask_dir, name[:-3]+'png'), cv2.IMREAD_GRAYSCALE)
         x1, y1, x2, y2 = bbox[:4]
         x1 = np.clip(x1, 0, w)
         x2 = np.clip(x2, 0, w)

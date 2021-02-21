@@ -1,16 +1,18 @@
+from functools import partial
 import os
 import torch
+import torch.nn.functional as F
 import data
 import loss
 import utils
 import numpy as np
 from option import args
-from model import ThinAge, TinyAge, get_resnet18
+from model import ThinAge, TinyAge, resnet18
 from test import test
 from tqdm import tqdm
-from torch.nn.utils.clip_grad import clip_grad_value_
 
-models = {'ThinAge': ThinAge, 'TinyAge': TinyAge, 'resnet18':get_resnet18}
+
+models = {'ThinAge': ThinAge, 'TinyAge': TinyAge, 'resnet18':resnet18}
 
 
 def get_model(pretrained=False):
@@ -26,7 +28,14 @@ def get_model(pretrained=False):
 
 
 def main():
-    model = get_model()
+    pretrained_fn = 'pretrained/{}.pt'.format(args.model_name)
+    if os.path.isfile(pretrained_fn):
+        model = torch.load(pretrained_fn)
+        print('load pretrained')
+    else:
+        model = get_model()
+
+    os.makedirs(args.ckpt_dir, exist_ok=1)
     device = torch.device('cuda')
     model = model.to(device)
     print(model)
@@ -41,11 +50,14 @@ def main():
         # start_time = time.time()
         for j, inputs in enumerate(tqdm(loader)):
             img, label, age = inputs['image'], inputs['label'], inputs['age']
+            # import ipdb; ipdb.set_trace()
+            mask = F.one_hot(inputs['mask'].long(), 11).float().permute(0, 3, 1, 2).to(device)
+            # img = torch.cat([img, mask], dim=1)
             img = img.to(device)
             label = label.to(device)
             age = age.to(device)
             optimizer.zero_grad()
-            outputs = model(img)
+            outputs = model(img, mask)
             ages = torch.sum(outputs*rank, dim=1)
             loss1 = loss.kl_loss(outputs, label)
             loss2 = loss.L1_loss(ages, age)
@@ -57,9 +69,9 @@ def main():
                 tqdm.write('[Epoch:{}] \t[batch:{}]\t[loss={:.4f}]'.format(
                     i, j, total_loss.item()))
             # start_time = time.time()
-        torch.save(model, './checkpoint/{}.pt'.format(args.model_name))
+        torch.save(model, './{}/{}.pt'.format(args.ckpt_dir, args.model_name))
         torch.save(model.state_dict(),
-                   './checkpoint/{}_dict.pt'.format(args.model_name))
+                   './{}/{}_dict.pt'.format(args.ckpt_dir, args.model_name))
         if (i+1) % 2 == 0:
             print('Test: Epoch=[{}]'.format(i))
             cur_mae = test(model)
@@ -67,9 +79,9 @@ def main():
                 best_mae = cur_mae
                 print(f'Saving best model with MAE {cur_mae}... ')
                 torch.save(
-                    model, './checkpoint/best_{}_MAE={}.pt'.format(args.model_name, cur_mae))
+                    model, './{}/best_{}_MAE={}.pt'.format(args.ckpt_dir, args.model_name, cur_mae))
                 torch.save(model.state_dict(),
-                           './checkpoint/best_{}_dict_MAE={}.pt'.format(args.model_name, cur_mae))
+                           './{}/best_{}_dict_MAE={}.pt'.format(args.ckpt_dir, args.model_name, cur_mae))
 
 
 if __name__ == '__main__':

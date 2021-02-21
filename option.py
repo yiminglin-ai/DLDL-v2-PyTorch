@@ -2,6 +2,9 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Age Estimator')
 """dataset options"""
+parser.add_argument('--imdb_lmdb', type=str, default='/home/yiminglin/ibug/age_data/imdb_cleaned_cropped_768.lmdb',
+                    help='path to images for training')
+
 parser.add_argument('--train_img', type=str, default='/home/yiminglin/ibug/age_data/morph2/Album2',
                     help='path to images for training')
 parser.add_argument('--train_label', type=str, default='Morph_Train1.txt',
@@ -12,6 +15,8 @@ parser.add_argument('--val_label', type=str, default='Morph_Valid1.txt',
                     help='path to .csv file which contains labels of images for test')
 parser.add_argument('--detect_dir', type=str, default='/home/yiminglin/ibug/age_data/morph2/detected',
                     help='path to .csv file which contains labels of images for training')
+parser.add_argument('-c', '--ckpt_dir', type=str, default='ckpt',
+                    help='save dir')
 
 """optimizer options"""
 parser.add_argument("--lr", type=float, default=1e-3, help='learning rate')
@@ -33,6 +38,6 @@ parser.add_argument("--height", type=int, default=224, help='height of input ima
 parser.add_argument("--width", type=int, default=224, help='width of input image')
 
 """model"""
-parser.add_argument("--model_name", type=str, default='TinyAge', help='which model to train')
+parser.add_argument("--model_name", type=str, default='ThinAge', help='which model to train')
 parser.add_argument('--nThread', type=int, default=12, help='number of threads for data loading')
 args = parser.parse_args()

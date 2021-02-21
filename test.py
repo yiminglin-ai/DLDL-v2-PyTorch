@@ -84,12 +84,20 @@ def test(model=None):
             flip = flip_inputs['image']
             for p in age:
                 group_count[get_group(p.item())] += 1
+
+            mask = F.one_hot(inputs['mask'].long(), 11).float().permute(0, 3, 1, 2)
+            # img = torch.cat([img, mask], dim=1)
+            mask = mask.to(device)
             img = img.to(device)
+
+            flip_mask = F.one_hot(flip_inputs['mask'].long(), 11).float().permute(0, 3, 1, 2).to(device)
+            # flip = torch.cat([flip, flip_mask], dim=1)
             flip = flip.to(device)
+
             label = label.to(device)
             age = age.to(device)
-            outputs = model(img)
-            outputs_flip = model(flip)
+            outputs = model(img, mask)
+            outputs_flip = model(flip, flip_mask)
             # predict_age = 0
             predict_age = torch.sum(outputs*rank, dim=1) + \
                 torch.sum(outputs_flip*rank, dim=1)
