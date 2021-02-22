@@ -76,7 +76,7 @@ def test(model=None):
         args.val_img, args.val_label, args.detect_dir, transform, flip=True)
     test_loader = dataloader.DataLoader(test_dataset,
                                         shuffle=False,
-                                        batch_size=args.train_batch_size,
+                                        batch_size=args.val_batch_size,
                                         num_workers=args.nThread)
     with torch.no_grad():
         for i, (inputs, flip_inputs) in enumerate(tqdm(test_loader)):

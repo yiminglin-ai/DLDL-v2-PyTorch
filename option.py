@@ -17,7 +17,8 @@ parser.add_argument('--detect_dir', type=str, default='/home/yiminglin/ibug/age_
                     help='path to .csv file which contains labels of images for training')
 parser.add_argument('-c', '--ckpt_dir', type=str, default='ckpt',
                     help='save dir')
-
+parser.add_argument('-p', '--pretrained', type=str, default=None,
+                    help='pretrained ckpt')
 """optimizer options"""
 parser.add_argument("--lr", type=float, default=1e-3, help='learning rate')
 parser.add_argument('--optimizer', default='SGD', choices=('SGD', 'ADAM', 'NADAM', 'RMSprop'), help='optimizer to use (SGD | ADAM | NADAM | RMSprop)')
@@ -33,7 +34,7 @@ parser.add_argument('--gamma', type=float, default=0.8, help='learning rate deca
 parser.add_argument('--reset', action='store_true', help='reset the training')
 parser.add_argument("--epochs", type=int, default=60, help='number of epochs to train')
 parser.add_argument("--train_batch_size", type=int, default=128)
-parser.add_argument("--val_batch_size", type=int, default=1)
+parser.add_argument("--val_batch_size", type=int, default=8)
 parser.add_argument("--height", type=int, default=224, help='height of input image')
 parser.add_argument("--width", type=int, default=224, help='width of input image')
 

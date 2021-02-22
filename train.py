@@ -28,17 +28,16 @@ def get_model(pretrained=False):
 
 
 def main():
-    pretrained_fn = 'pretrained/{}.pt'.format(args.model_name)
-    if os.path.isfile(pretrained_fn):
-        model = torch.load(pretrained_fn)
-        print('load pretrained')
+    if os.path.isfile(args.pretrained) and args.model_name in args.pretrained:
+        model = torch.load(args.pretrained)
+        print(f'load pretrained {args.model_name}')
     else:
         model = get_model()
 
     os.makedirs(args.ckpt_dir, exist_ok=1)
     device = torch.device('cuda')
     model = model.to(device)
-    print(model)
+    # print(model)
     loader = data.Data(args).train_loader
     rank = torch.Tensor([i for i in range(101)]).cuda()
     best_mae = np.inf

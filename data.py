@@ -19,6 +19,8 @@ import ibug.roi_tanh_warping.reference_impl as ref
 from albumentations.augmentations import functional as F
 from albumentations.core.transforms_interface import to_tuple
 import random
+import sys, ipdb
+sys.breakpointhook = ipdb.set_trace
 
 def bbox_shift_scale(bbox, scale, dx, dy, **kwargs):  # skipcq: PYL-W0613
     x_min, y_min, x_max, y_max = bbox[:4]  # pascal_voc
@@ -204,11 +206,23 @@ class Dataset(dataset.Dataset):
         self.detect_dir = detect_dir
         self.mask_dir = detect_dir.replace('detected', 'parsed')
         self.labels = [label[0:-1] for label in csv.reader(open(train_label, 'r'))]
+        if not all(self.labels):
+            with open(train_label) as f:
+                self.labels = [l.strip().split()[:2] for l in f]
+        assert all(self.labels)
+        if self.labels[0][0].startswith('Album2'):
+            for i, (name, age) in enumerate(self.labels):
+                self.labels[i][0] = name[len('Album2')+1:]
+        self.labels = [l for l in self.labels if os.path.isfile(os.path.join(self.root, l[0]))]
         self.loader = default_loader
         self.flip = flip
 
     def __getitem__(self, index):
-        name, age = self.labels[index]
+        try:
+            name, age = self.labels[index]
+        except:
+            print(self.labels)
+            sys.exit()
         age = float (age)
         img = self.loader(os.path.join(self.root, name))
         w, h = img.width, img.height
